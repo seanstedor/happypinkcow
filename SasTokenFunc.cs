@@ -23,19 +23,30 @@ namespace sowa.dor
             var connectionString = Environment.GetEnvironmentVariable("AzureStorage");
             var containerName = Environment.GetEnvironmentVariable("ContainerName");
 
-            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(connectionString);
-            CloudBlobClient client = storageAccount.CreateCloudBlobClient();
-            CloudBlobContainer container = client.GetContainerReference(containerName);
-
-            SharedAccessBlobPolicy accessPolicy = new SharedAccessBlobPolicy
+            try
             {
-                SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(30),
-                Permissions = SharedAccessBlobPermissions.Create | SharedAccessBlobPermissions.Write
-            };
+                _logger.LogInformation("Account, client, container");
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(connectionString);
+                CloudBlobClient client = storageAccount.CreateCloudBlobClient();
+                CloudBlobContainer container = client.GetContainerReference(containerName);
 
-            var token = container.GetSharedAccessSignature(accessPolicy);
+                _logger.LogInformation("Access policy");
+                SharedAccessBlobPolicy accessPolicy = new SharedAccessBlobPolicy
+                {
+                    SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(30),
+                    Permissions = SharedAccessBlobPermissions.Create | SharedAccessBlobPermissions.Write
+                };
 
-            return new OkObjectResult($"{container.Uri}{token}");
+                _logger.LogInformation("Token");
+                var token = container.GetSharedAccessSignature(accessPolicy);
+                
+                return new OkObjectResult($"{container.Uri}{token}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+            }
+            
         }
     }
 }
